@@ -27,7 +27,7 @@ jobs:
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.SERVER_IP }}
-          REMOTE_USER: "root"
+          REMOTE_USER: "deploy"
           # TARGET is your live web directory. Update the full absolute path if needed.
           TARGET: "/path/to/invoices.ffsdgroup.com/" 
           # SOURCE specifies the build folder to copy from. Change "dist" to "build" if using older CRA.
