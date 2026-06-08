@@ -1,0 +1,187 @@
+    .invoice-container {
+      width: 100%;
+      padding: 60px;
+      box-sizing: border-box;
+      color: #333333;
+    }
+
+    input::placeholder{
+      font-size: 0.8rem;
+    }
+
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: top;
+      margin-bottom: 30px;
+      font-weight: bold;
+    }
+
+    .invoice-log img {
+      max-width: 150px;
+      height: auto;
+    }
+
+    div.invoice-log{
+        max-width: 20%;
+    }
+
+    .invoice-log div.details {
+      font-weight: normal;
+    }
+
+    .invoice-company-details {
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .invoice-company-details .invoice-name {
+      font-size: 2rem;
+      text-transform: uppercase;
+    }
+
+    .invoice-no{
+      font-size: 1rem;
+      /* font-weight: 10px; */
+    }
+
+    .balance-due{
+      font-size: 0.8rem;
+    }
+
+    .client-name, .invoice-date{
+      width: 40%;
+      font-size:0.9rem;
+    }
+
+    .invoice-date, .invoice-billing{
+      display: flex;
+      justify-content:space-between;
+      align-items:end;
+    }
+
+    .invoice-date-div{
+      width:100%;
+    }
+
+    .invoice-date-div .input-div{
+      width: 50%;
+    }
+
+    .invoice-date-div .label-div{
+      width: 50%;
+    }
+
+
+    .invoice-info-table {
+      width: 100%;
+      margin-bottom: 30px;
+      border-collapse: collapse;
+    }
+    .invoice-info-table td {
+      padding: 4px 0;
+      border:2px solid red;
+    }
+
+    .invoice-title {
+      text-align: right;
+      font-size: 32px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .invoice-bill-to {
+      margin-bottom: 20px;
+    }
+    .invoice-bill-to .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .invoice-dates {
+      width: 100%;
+      margin-bottom: 30px;
+    }
+    .invoice-dates td {
+      padding: 4px 0;
+    }
+
+    table.invoice-items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table.invoice-items th,
+    table.invoice-items td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    table.invoice-items th {
+      /* background-color: #f5f5f5; */
+      text-align: left;
+      font-weight: normal;
+      color: white;
+      font-size: 0.8rem;
+    }
+
+    .invoice-totals {
+      width: 100%;
+      margin-top: 20px;
+      text-align: right;
+    }
+    .invoice-totals td {
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .invoice-totals .bold {
+      font-weight: bold;
+    }
+
+    .invoice-words {
+      margin-top: 15px;
+      font-size: 14px;
+      width: 30%
+    }
+
+    .invoice-footer {
+      margin-top: 30px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    span.tax-span{
+      font-weight: normal;
+      font-size: 0.7rem;
+      font-style: italic;
+    }
+
+    /* Add line in invoice template page */
+    #add_line{
+      padding: 5px 10px;
+      font-size: 0.8rem;
+    }
+
+    /* Hide inputs in print-mode */
+    .print-mode input,
+    .print-mode select,
+    .print-mode button,
+    .hide-on-pdf {
+      display: none !important;
+    }
+
+    /* Replace input appearance with plain text */
+    .print-mode .input-as-text {
+      display: block !important;
+    }
+
+    /* Hide text placeholders during normal view */
+    .input-as-text {
+      display: none;
+    }
+
+    .invoice_error{
+      border: 1px solid red;
+    }
+
+
