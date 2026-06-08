@@ -12,11 +12,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Change to your required version
+
+      - name: Install Dependencies & Build
+        run: |
+          npm install
+          npm run build
+
       - name: Sync Files to Server
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.SERVER_IP }}
           REMOTE_USER: "root"
-          TARGET: "/path/to/invoices.ffsdgroup.com/"
+          # TARGET is your live web directory. Update the full absolute path if needed.
+          TARGET: "/path/to/invoices.ffsdgroup.com/" 
+          # SOURCE specifies the build folder to copy from. Change "dist" to "build" if using older CRA.
+          SOURCE: "dist/" 
           ARGS: "-rlgoDIVzc --delete"
