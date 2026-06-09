@@ -107,7 +107,7 @@ jobs:
           REMOTE_USER: deploy
           TARGET: "/home/ffsdgroup.com/invoices.ffsdgroup.com"
           SOURCE: "dist/"
-          ARGS: "-rlgoDzvc --delete --progress"
+          ARGS: "-rlgDzvc --delete --no-owner --no-group"
 
       - name: Verify Deployment
         run: |
