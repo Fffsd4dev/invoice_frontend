@@ -29,7 +29,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.SERVER_IP }}
           REMOTE_USER: "deploy"
           # TARGET is your live web directory. Update the full absolute path if needed.
-          TARGET: "/home/ffsdgroup.com/invoices.ffsdgroup.com/public_html"
+          TARGET: "/home/ffsdgroup.com/invoices.ffsdgroup.com"
           # SOURCE specifies the build folder to copy from. Change "dist" to "build" if using older CRA.
           SOURCE: "dist/" 
           ARGS: "-rlgoDIVzc --delete"
