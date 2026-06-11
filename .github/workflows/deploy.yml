@@ -1,0 +1,131 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Display Environment Information
+        run: |
+          echo "===== SYSTEM INFO ====="
+          node -v
+          npm -v
+          pwd
+          ls -lah
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+      - name: Build Application
+        run: |
+          npm run build
+
+      - name: Verify Build Output
+        run: |
+          echo "===== ROOT DIRECTORY ====="
+          ls -lah
+
+          echo ""
+          echo "===== DIST DIRECTORY ====="
+          ls -lah dist || echo "dist directory not found"
+
+          echo ""
+          echo "===== DIST FILE TREE ====="
+          find dist -type f || echo "No files found in dist"
+
+          echo ""
+          echo "===== DIST SIZE ====="
+          du -sh dist || true
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+
+          chmod 600 ~/.ssh/id_rsa
+
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
+            echo '===== SSH CONNECTION SUCCESSFUL ====='
+            whoami
+            pwd
+            hostname
+          "
+
+      - name: Check Target Directory
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
+            echo '===== TARGET DIRECTORY CHECK ====='
+
+            TARGET='/home/ffsdgroup.com/invoices.ffsdgroup.com'
+
+            echo \"Target: \$TARGET\"
+
+            if [ -d \"\$TARGET\" ]; then
+              echo 'Directory exists'
+            else
+              echo 'Directory DOES NOT exist'
+            fi
+
+            ls -lah \$TARGET || true
+
+            echo ''
+            echo 'Permissions:'
+            stat \$TARGET || true
+          "
+
+      - name: List Files Before Deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
+            echo '===== FILES BEFORE DEPLOYMENT ====='
+            find /home/invoices.ffsdgroup.com/public_html/ -maxdepth 2 -type f
+          "
+
+      - name: Deploy Files
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_IP }}
+          REMOTE_USER: deploy
+          TARGET: "/home/invoices.ffsdgroup.com/public_html"
+          SOURCE: "dist/"
+          ARGS: "-rlgDzvc --delete --no-owner --no-group"
+
+      - name: Verify Deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
+            echo '===== FILES AFTER DEPLOYMENT ====='
+
+            ls -lah /home/invoices.ffsdgroup.com/public_html
+
+            echo ''
+            echo '===== DEPLOYED FILE TREE ====='
+            find /home/invoices.ffsdgroup.com/public_thml -type f
+
+            echo ''
+            echo '===== DISK USAGE ====='
+            du -sh /home/invoices.ffsdgroup.com/public_html
+          "
+
+      - name: Deployment Summary
+        run: |
+          echo "Deployment workflow completed."
+          echo "Review logs above for build output, SSH connectivity, and uploaded files."
