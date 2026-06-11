@@ -96,7 +96,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
             echo '===== FILES BEFORE DEPLOYMENT ====='
-            find /home/ffsdgroup.com/invoices.ffsdgroup.com -maxdepth 2 -type f
+            find /home/invoices.ffsdgroup.com/public_html/ -maxdepth 2 -type f
           "
 
       - name: Deploy Files
@@ -105,7 +105,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.SERVER_IP }}
           REMOTE_USER: deploy
-          TARGET: "/home/ffsdgroup.com/invoices.ffsdgroup.com"
+          TARGET: "/home/invoices.ffsdgroup.com/public_html"
           SOURCE: "dist/"
           ARGS: "-rlgDzvc --delete --no-owner --no-group"
 
@@ -118,11 +118,11 @@ jobs:
 
             echo ''
             echo '===== DEPLOYED FILE TREE ====='
-            find /home/ffsdgroup.com/invoices.ffsdgroup.com -type f
+            find /home/invoices.ffsdgroup.com/public_thml -type f
 
             echo ''
             echo '===== DISK USAGE ====='
-            du -sh /home/ffsdgroup.com/invoices.ffsdgroup.com
+            du -sh /home/invoices.ffsdgroup.com/public_html
           "
 
       - name: Deployment Summary
