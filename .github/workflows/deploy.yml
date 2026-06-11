@@ -54,11 +54,8 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-
           chmod 600 ~/.ssh/id_rsa
-
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Test SSH Connection
@@ -96,7 +93,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
             echo '===== FILES BEFORE DEPLOYMENT ====='
-            find /home/invoices.ffsdgroup.com/public_html/ -maxdepth 2 -type f
+            find /home/invoices.ffsdgroup.com/public_html -maxdepth 2 -type f || true
           "
 
       - name: Deploy Files
@@ -107,7 +104,15 @@ jobs:
           REMOTE_USER: deploy
           TARGET: "/home/invoices.ffsdgroup.com/public_html"
           SOURCE: "dist/"
-          ARGS: "-rlgDzvc --delete --no-owner --no-group"
+          ARGS: "-rlgDzvc --no-owner --no-group"
+
+      - name: Fix Permissions After Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
+            echo '===== FIXING PERMISSIONS ====='
+            chown -R invoi3574:invoi3574 /home/invoices.ffsdgroup.com/public_html
+            chmod -R 755 /home/invoices.ffsdgroup.com/public_html
+          "
 
       - name: Verify Deployment
         run: |
@@ -127,5 +132,4 @@ jobs:
 
       - name: Deployment Summary
         run: |
-          echo "Deployment workflow completed."
-          echo "Review logs above for build output, SSH connectivity, and uploaded files."
+          echo "Deployment workflow completed successfully."
