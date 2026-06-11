@@ -19,7 +19,7 @@ jobs:
           node-version: "20"
 
       # -----------------------------
-      # CREATE ENV BEFORE BUILD
+      # CREATE FRONTEND ENV (IMPORTANT: BEFORE BUILD)
       # -----------------------------
       - name: Create .env file
         run: |
@@ -47,19 +47,19 @@ jobs:
       - name: Backup Current Release
         run: |
           ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== BACKING UP CURRENT RELEASE ====='
+            echo '===== BACKUP CURRENT RELEASE ====='
 
             if [ -d /home/invoices.ffsdgroup.com/public_html ]; then
               rm -rf /home/invoices.ffsdgroup.com/public_html_backup
               cp -r /home/invoices.ffsdgroup.com/public_html /home/invoices.ffsdgroup.com/public_html_backup
               echo 'Backup created'
             else
-              echo 'No existing release to backup'
+              echo 'No existing release found'
             fi
           "
 
       # -----------------------------
-      # DEPLOY NEW BUILD
+      # DEPLOY FILES
       # -----------------------------
       - name: Deploy Files
         uses: easingthemes/ssh-deploy@main
@@ -77,11 +77,29 @@ jobs:
       - name: Verify Deployment
         run: |
           ssh deploy@${{ secrets.SERVER_IP }} "
+            echo '===== VERIFY DEPLOYMENT ====='
+
             if [ -f /home/invoices.ffsdgroup.com/public_html/index.html ]; then
-              echo 'DEPLOY_OK=1' > /tmp/deploy_status
+              echo 'DEPLOY SUCCESS'
             else
-              echo 'DEPLOY_OK=0' > /tmp/deploy_status
+              echo 'DEPLOY FAILED'
+              exit 1
             fi
+          "
+
+      # -----------------------------
+      # FIX PERMISSIONS (SAFE VERSION - NO CHOWN)
+      # -----------------------------
+      - name: Fix Permissions After Deploy
+        if: success()
+        run: |
+          ssh deploy@${{ secrets.SERVER_IP }} "
+            echo '===== FIXING PERMISSIONS ====='
+
+            find /home/invoices.ffsdgroup.com/public_html -type d -exec chmod 755 {} \;
+            find /home/invoices.ffsdgroup.com/public_html -type f -exec chmod 644 {} \;
+
+            echo 'Permissions fixed'
           "
 
       # -----------------------------
@@ -91,7 +109,7 @@ jobs:
         if: failure()
         run: |
           ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== DEPLOY FAILED - ROLLING BACK ====='
+            echo '===== ROLLBACK INITIATED ====='
 
             rm -rf /home/invoices.ffsdgroup.com/public_html
             mv /home/invoices.ffsdgroup.com/public_html_backup /home/invoices.ffsdgroup.com/public_html
@@ -99,17 +117,6 @@ jobs:
             echo 'Rollback completed'
           "
 
-      # -----------------------------
-      # FIX PERMISSIONS
-      # -----------------------------
-      - name: Fix Permissions After Deploy
-        if: success()
-        run: |
-          ssh deploy@${{ secrets.SERVER_IP }} "
-            chown -R invoi3574:invoi3574 /home/invoices.ffsdgroup.com/public_html
-            chmod -R 755 /home/invoices.ffsdgroup.com/public_html
-          "
-
       - name: Deployment Summary
         run: |
-          echo "Deployment completed with rollback protection."
+          echo "Deployment completed successfully (or rolled back if failed)."
