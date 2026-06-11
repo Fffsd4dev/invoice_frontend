@@ -114,7 +114,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
             echo '===== FILES AFTER DEPLOYMENT ====='
 
-            ls -lah /home/ffsdgroup.com/invoices.ffsdgroup.com
+            ls -lah /home/invoices.ffsdgroup.com/public_html
 
             echo ''
             echo '===== DEPLOYED FILE TREE ====='
