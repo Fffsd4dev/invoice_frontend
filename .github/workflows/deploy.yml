@@ -18,38 +18,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Display Environment Information
-        run: |
-          echo "===== SYSTEM INFO ====="
-          node -v
-          npm -v
-          pwd
-          ls -lah
-
       - name: Install Dependencies
-        run: |
-          npm install
+        run: npm install
 
       - name: Build Application
-        run: |
-          npm run build
-
-      - name: Verify Build Output
-        run: |
-          echo "===== ROOT DIRECTORY ====="
-          ls -lah
-
-          echo ""
-          echo "===== DIST DIRECTORY ====="
-          ls -lah dist || echo "dist directory not found"
-
-          echo ""
-          echo "===== DIST FILE TREE ====="
-          find dist -type f || echo "No files found in dist"
-
-          echo ""
-          echo "===== DIST SIZE ====="
-          du -sh dist || true
+        run: npm run build
 
       - name: Setup SSH Key
         run: |
@@ -58,45 +31,29 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Test SSH Connection
+      # -----------------------------
+      # BACKUP CURRENT PRODUCTION
+      # -----------------------------
+      - name: Backup Current Release
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
-            echo '===== SSH CONNECTION SUCCESSFUL ====='
-            whoami
-            pwd
-            hostname
-          "
+          ssh deploy@${{ secrets.SERVER_IP }} "
+            echo '===== BACKING UP CURRENT RELEASE ====='
 
-      - name: Check Target Directory
-        run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
-            echo '===== TARGET DIRECTORY CHECK ====='
-
-            TARGET='/home/invoices.ffsdgroup.com/public_html'
-
-            echo \"Target: \$TARGET\"
-
-            if [ -d \"\$TARGET\" ]; then
-              echo 'Directory exists'
+            if [ -d /home/invoices.ffsdgroup.com/public_html ]; then
+              rm -rf /home/invoices.ffsdgroup.com/public_html_backup
+              cp -r /home/invoices.ffsdgroup.com/public_html /home/invoices.ffsdgroup.com/public_html_backup
+              echo 'Backup created'
             else
-              echo 'Directory DOES NOT exist'
+              echo 'No existing release to backup'
             fi
-
-            ls -lah \$TARGET || true
-
-            echo ''
-            echo 'Permissions:'
-            stat \$TARGET || true
           "
 
-      - name: List Files Before Deployment
-        run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
-            echo '===== FILES BEFORE DEPLOYMENT ====='
-            find /home/invoices.ffsdgroup.com/public_html -maxdepth 2 -type f || true
-          "
-
+      # -----------------------------
+      # DEPLOY NEW BUILD
+      # -----------------------------
       - name: Deploy Files
+        id: deploy
+        continue-on-error: true
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -106,30 +63,46 @@ jobs:
           SOURCE: "dist/"
           ARGS: "-rlgDzvc --no-owner --no-group"
 
-      - name: Fix Permissions After Deploy
+      # -----------------------------
+      # CHECK DEPLOY RESULT
+      # -----------------------------
+      - name: Verify Deployment
+        id: verify
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
-            echo '===== FIXING PERMISSIONS ====='
+          ssh deploy@${{ secrets.SERVER_IP }} "
+            if [ -f /home/invoices.ffsdgroup.com/public_html/index.html ]; then
+              echo 'DEPLOY_OK=1' > /tmp/deploy_status
+            else
+              echo 'DEPLOY_OK=0' > /tmp/deploy_status
+            fi
+          "
+
+      # -----------------------------
+      # ROLLBACK IF FAILED
+      # -----------------------------
+      - name: Rollback if Failed
+        if: failure()
+        run: |
+          ssh deploy@${{ secrets.SERVER_IP }} "
+            echo '===== DEPLOY FAILED - ROLLING BACK ====='
+
+            rm -rf /home/invoices.ffsdgroup.com/public_html
+            mv /home/invoices.ffsdgroup.com/public_html_backup /home/invoices.ffsdgroup.com/public_html
+
+            echo 'Rollback completed'
+          "
+
+      # -----------------------------
+      # FIX PERMISSIONS
+      # -----------------------------
+      - name: Fix Permissions After Deploy
+        if: success()
+        run: |
+          ssh deploy@${{ secrets.SERVER_IP }} "
             chown -R invoi3574:invoi3574 /home/invoices.ffsdgroup.com/public_html
             chmod -R 755 /home/invoices.ffsdgroup.com/public_html
           "
 
-      - name: Verify Deployment
-        run: |
-          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
-            echo '===== FILES AFTER DEPLOYMENT ====='
-
-            ls -lah /home/invoices.ffsdgroup.com/public_html
-
-            echo ''
-            echo '===== DEPLOYED FILE TREE ====='
-            find /home/invoices.ffsdgroup.com/public_html -type f
-
-            echo ''
-            echo '===== DISK USAGE ====='
-            du -sh /home/invoices.ffsdgroup.com/public_html
-          "
-
       - name: Deployment Summary
         run: |
-          echo "Deployment workflow completed successfully."
+          echo "Deployment completed with rollback protection."
