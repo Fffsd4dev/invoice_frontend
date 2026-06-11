@@ -23,7 +23,7 @@ jobs:
       # -----------------------------
       - name: Create .env file
         run: |
-          echo "VITE_BACKEND_URL=https://api.invoices.ffsdgroup.com" > .env
+          echo "VITE_BACKEND_URL=http://api.invoices.ffsdgroup.com" > .env
 
       - name: Install Dependencies
         run: npm install
