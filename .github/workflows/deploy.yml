@@ -75,7 +75,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "
             echo '===== TARGET DIRECTORY CHECK ====='
 
-            TARGET='/home/ffsdgroup.com/invoices.ffsdgroup.com'
+            TARGET='/home/invoices.ffsdgroup.com/public_html'
 
             echo \"Target: \$TARGET\"
 
@@ -118,7 +118,7 @@ jobs:
 
             echo ''
             echo '===== DEPLOYED FILE TREE ====='
-            find /home/invoices.ffsdgroup.com/public_thml -type f
+            find /home/invoices.ffsdgroup.com/public_html -type f
 
             echo ''
             echo '===== DISK USAGE ====='
