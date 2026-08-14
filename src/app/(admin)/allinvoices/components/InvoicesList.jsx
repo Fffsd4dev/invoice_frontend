@@ -52,7 +52,7 @@ const InvoiceList = ({ invoices, refreshInvoices }) => {
       }, 1500);
       
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete Invoice');
+      setError(error.response?.data?.message || 'Failed to delete the Invoice');
       console.error('Error deleting invoice:', error);
     } finally {
       setLoading(false);
