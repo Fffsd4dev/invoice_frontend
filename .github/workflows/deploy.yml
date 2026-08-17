@@ -10,26 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -----------------------------
+      # CHECKOUT CODE
+      # -----------------------------
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # SET UP NODE.JS
+      # -----------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       # -----------------------------
-      # CREATE FRONTEND ENV (IMPORTANT: BEFORE BUILD)
+      # CREATE FRONTEND ENV
+      # IMPORTANT: BEFORE BUILD
       # -----------------------------
       - name: Create .env file
         run: |
           echo "VITE_BACKEND_URL=http://api.invoices.ffsdgroup.com" > .env
 
+      # -----------------------------
+      # INSTALL DEPENDENCIES
+      # -----------------------------
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
 
+      # -----------------------------
+      # BUILD APPLICATION
+      # -----------------------------
       - name: Build Application
-        run: npm run build
+        run: |
+          npm run build
 
       # -----------------------------
       # SETUP SSH
@@ -37,26 +52,46 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keyscan -H "${{ secrets.SERVER_IP }}" >> ~/.ssh/known_hosts
+
+          echo "===== TESTING SSH AUTHENTICATION ====="
+
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            deploy@${{ secrets.SERVER_IP }} "whoami"
+
+          echo "===== SSH AUTHENTICATION SUCCESSFUL ====="
 
       # -----------------------------
       # BACKUP CURRENT RELEASE
       # -----------------------------
       - name: Backup Current Release
         run: |
-          ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== BACKUP CURRENT RELEASE ====='
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            deploy@${{ secrets.SERVER_IP }} "
+              echo '===== BACKUP CURRENT RELEASE ====='
 
-            if [ -d /home/invoices.ffsdgroup.com/public_html ]; then
-              rm -rf /home/invoices.ffsdgroup.com/public_html_backup
-              cp -r /home/invoices.ffsdgroup.com/public_html /home/invoices.ffsdgroup.com/public_html_backup
-              echo 'Backup created'
-            else
-              echo 'No existing release found'
-            fi
-          "
+              if [ -d /home/invoices.ffsdgroup.com/public_html ]; then
+                rm -rf /home/invoices.ffsdgroup.com/public_html_backup
+
+                cp -r \
+                  /home/invoices.ffsdgroup.com/public_html \
+                  /home/invoices.ffsdgroup.com/public_html_backup
+
+                echo 'Backup created'
+              else
+                echo 'No existing release found'
+              fi
+            "
 
       # -----------------------------
       # DEPLOY FILES
@@ -76,31 +111,43 @@ jobs:
       # -----------------------------
       - name: Verify Deployment
         run: |
-          ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== VERIFY DEPLOYMENT ====='
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            deploy@${{ secrets.SERVER_IP }} "
+              echo '===== VERIFY DEPLOYMENT ====='
 
-            if [ -f /home/invoices.ffsdgroup.com/public_html/index.html ]; then
-              echo 'DEPLOY SUCCESS'
-            else
-              echo 'DEPLOY FAILED'
-              exit 1
-            fi
-          "
+              if [ -f /home/invoices.ffsdgroup.com/public_html/index.html ]; then
+                echo 'DEPLOY SUCCESS'
+              else
+                echo 'DEPLOY FAILED'
+                exit 1
+              fi
+            "
 
       # -----------------------------
-      # FIX PERMISSIONS (SAFE VERSION - NO CHOWN)
+      # FIX PERMISSIONS
+      # SAFE VERSION - NO CHOWN
       # -----------------------------
       - name: Fix Permissions After Deploy
         if: success()
         run: |
-          ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== FIXING PERMISSIONS ====='
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            deploy@${{ secrets.SERVER_IP }} "
+              echo '===== FIXING PERMISSIONS ====='
 
-            find /home/invoices.ffsdgroup.com/public_html -type d -exec chmod 755 {} \;
-            find /home/invoices.ffsdgroup.com/public_html -type f -exec chmod 644 {} \;
+              find /home/invoices.ffsdgroup.com/public_html \
+                -type d \
+                -exec chmod 755 {} \;
 
-            echo 'Permissions fixed'
-          "
+              find /home/invoices.ffsdgroup.com/public_html \
+                -type f \
+                -exec chmod 644 {} \;
+
+              echo 'Permissions fixed'
+            "
 
       # -----------------------------
       # ROLLBACK IF FAILED
@@ -108,15 +155,32 @@ jobs:
       - name: Rollback if Failed
         if: failure()
         run: |
-          ssh deploy@${{ secrets.SERVER_IP }} "
-            echo '===== ROLLBACK INITIATED ====='
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            deploy@${{ secrets.SERVER_IP }} "
+              echo '===== ROLLBACK INITIATED ====='
 
-            rm -rf /home/invoices.ffsdgroup.com/public_html
-            mv /home/invoices.ffsdgroup.com/public_html_backup /home/invoices.ffsdgroup.com/public_html
+              if [ -d /home/invoices.ffsdgroup.com/public_html_backup ]; then
 
-            echo 'Rollback completed'
-          "
+                rm -rf /home/invoices.ffsdgroup.com/public_html
 
+                mv \
+                  /home/invoices.ffsdgroup.com/public_html_backup \
+                  /home/invoices.ffsdgroup.com/public_html
+
+                echo 'Rollback completed'
+
+              else
+
+                echo 'No backup found. Rollback skipped.'
+
+              fi
+            "
+
+      # -----------------------------
+      # DEPLOYMENT SUMMARY
+      # -----------------------------
       - name: Deployment Summary
         run: |
           echo "Deployment completed successfully (or rolled back if failed)."
