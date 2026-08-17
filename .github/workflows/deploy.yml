@@ -65,7 +65,7 @@ jobs:
             -i ~/.ssh/deploy_key \
             -o IdentitiesOnly=yes \
             -o BatchMode=yes \
-            deploy@${{ secrets.SERVER_IP }} "whoami"
+            maypevcf@${{ secrets.SERVER_IP }} "whoami"
 
           echo "===== SSH AUTHENTICATION SUCCESSFUL ====="
 
